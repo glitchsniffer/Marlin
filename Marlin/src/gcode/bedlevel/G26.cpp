@@ -121,7 +121,7 @@
   #include "../../feature/bedlevel/hilbert_curve.h"
 #endif
 
-#define EXTRUSION_MULTIPLIER 0.9
+#define EXTRUSION_MULTIPLIER 1
 #define PRIME_LENGTH 5
 #define OOZE_AMOUNT 0.3
 
@@ -238,7 +238,7 @@ typedef struct {
 
   void recover_filament(const xyz_pos_t &where) {
     if (g26_retracted) { // Only un-retract if we are retracted.
-      move_to(where, 1.0f * retraction_multiplier);
+      move_to(where, 1.15f * retraction_multiplier);
       g26_retracted = false;
     }
   }
