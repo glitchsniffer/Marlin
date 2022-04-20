@@ -238,7 +238,7 @@ typedef struct {
 
   void recover_filament(const xyz_pos_t &where) {
     if (g26_retracted) { // Only un-retract if we are retracted.
-      move_to(where, 1.2f * retraction_multiplier);
+      move_to(where, 1.15f * retraction_multiplier);
       g26_retracted = false;
     }
   }
