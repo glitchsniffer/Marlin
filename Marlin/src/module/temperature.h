@@ -96,13 +96,14 @@ hotend_pid_t;
 
 #if ENABLED(MPCTEMP)
   typedef struct {
-    float heater_power;             // M306 P
-    float block_heat_capacity;      // M306 C
-    float sensor_responsiveness;    // M306 R
-    float ambient_xfer_coeff_fan0;  // M306 A
+    float heater_power;                 // M306 P
+    float block_heat_capacity;          // M306 C
+    float sensor_responsiveness;        // M306 R
+    float ambient_xfer_coeff_fan0;      // M306 A
     #if ENABLED(MPC_INCLUDE_FAN)
-      float fan255_adjustment;      // M306 F
+      float fan255_adjustment;          // M306 F
     #endif
+    float filament_heat_capacity_permm; // M306 M
   } MPC_t;
 #endif
 
@@ -716,7 +717,7 @@ class Temperature {
     /**
      * Call periodically to manage heaters
      */
-    static void manage_heater() _O2; // Added _O2 to work around a compiler error
+    static void manage_heater() __O2; // __O2 added to work around a compiler error
 
     /**
      * Preheating hotends
@@ -994,7 +995,7 @@ class Temperature {
     #endif // HEATER_IDLE_HANDLER
 
     #if HAS_TEMP_SENSOR
-      static void print_heater_states(const int8_t target_extruder
+      static void print_heater_states(const uint8_t target_extruder
         OPTARG(HAS_TEMP_REDUNDANT, const bool include_r=false)
       );
       #if ENABLED(AUTO_REPORT_TEMPERATURES)
