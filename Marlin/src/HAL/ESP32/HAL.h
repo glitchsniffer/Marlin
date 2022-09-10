@@ -32,7 +32,6 @@
 #include "../shared/HAL_SPI.h"
 
 #include "fastio.h"
-#include "watchdog.h"
 #include "i2s.h"
 
 #if ENABLED(WIFISUPPORT)
@@ -69,6 +68,9 @@
 #define PWM_RESOLUTION   10u   // Default PWM bit resolution
 #define CHANNEL_MAX_NUM  15u   // max PWM channel # to allocate (7 to only use low speed, 15 to use low & high)
 #define MAX_PWM_IOPIN    33u   // hardware pwm pins < 34
+#ifndef MAX_EXPANDER_BITS
+  #define MAX_EXPANDER_BITS 32 // I2S expander bit width (max 32)
+#endif
 
 // ------------------------
 // Types
@@ -76,6 +78,12 @@
 
 typedef double isr_float_t;   // FPU ops are used for single-precision, so use double for ISRs.
 typedef int16_t pin_t;
+
+typedef struct pwm_pin {
+  uint32_t pwm_cycle_ticks = 1000000UL / (PWM_FREQUENCY) / 4; // # ticks per pwm cycle
+  uint32_t pwm_tick_count = 0;  // current tick count
+  uint32_t pwm_duty_ticks = 0;  // # of ticks for current duty cycle
+} pwm_pin_t;
 
 class Servo;
 typedef Servo hal_servo_t;
@@ -98,10 +106,6 @@ void analogWrite(const pin_t pin, const uint16_t value, const uint32_t freq=PWM_
 #define GET_PIN_MAP_PIN(index) index
 #define GET_PIN_MAP_INDEX(pin) pin
 #define PARSED_PIN_INDEX(code, dval) parser.intval(code, dval)
-
-#if ENABLED(USE_ESP32_EXIO)
-  void Write_EXIO(uint8_t IO, uint8_t v);
-#endif
 
 #if ENABLED(USE_ESP32_EXIO)
   void Write_EXIO(uint8_t IO, uint8_t v);
@@ -176,9 +180,13 @@ public:
   // Earliest possible init, before setup()
   MarlinHAL() {}
 
-  static void init() {}  // Called early in setup()
-  static void init_board();     // Called less early in setup()
-  static void reboot();         // Restart the firmware
+  // Watchdog
+  static void watchdog_init()    IF_DISABLED(USE_WATCHDOG, {});
+  static void watchdog_refresh() IF_DISABLED(USE_WATCHDOG, {});
+
+  static void init() {}        // Called early in setup()
+  static void init_board();    // Called less early in setup()
+  static void reboot();        // Restart the firmware
 
   // Interrupts
   static portMUX_TYPE spinlock;
@@ -197,6 +205,8 @@ public:
 
   // Free SRAM
   static int freeMemory();
+
+  static pwm_pin_t pwm_pin_data[MAX_EXPANDER_BITS];
 
   //
   // ADC Methods
